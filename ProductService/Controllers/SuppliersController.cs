@@ -23,6 +23,7 @@ namespace ProductService.Controllers
             return db.Suppliers;
         }
 
+        [EnableQuery]
         public IQueryable<Product> GetProducts([FromODataUri] int key)
         {
             return db.Suppliers.Where(p => p.Id == key).SelectMany(p => p.Products);
