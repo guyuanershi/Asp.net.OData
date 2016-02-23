@@ -8,6 +8,8 @@ using ProductService.Models;
 using System.Web.Http;
 using System.Threading.Tasks;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity;
+using System.Net;
 
 namespace ProductService.Controllers
 {
@@ -83,6 +85,29 @@ namespace ProductService.Controllers
             return SingleResult.Create(supplier);
         }
 
+        [AcceptVerbs("POST", "PUT")]
+        public async Task<IHttpActionResult> CreateRef([FromODataUri] int key, string navigationProperty, [FromBody] Uri link)
+        {
+            var product = await db.Products.SingleOrDefaultAsync(p => p.Id == key);
+            if (product == null) return NotFound();
+
+            switch (navigationProperty)
+            {
+                case "Supplier":
+                    var relatedkey = Helpers.GetKeyFromUri<int>(Request, link);
+                    var supplier = await db.Suppliers.SingleOrDefaultAsync(f => f.Id == relatedkey);
+                    if (supplier == null)
+                        return NotFound();
+
+                    product.Supplier = supplier;
+                    break;
+                default:
+                    return StatusCode(HttpStatusCode.NotImplemented);
+            }
+
+            await db.SaveChangesAsync();
+            return StatusCode(HttpStatusCode.NoContent);
+        }
         private bool ProductExist(int key)
         {
             return db.Products.Any(p => p.Id == key);
